@@ -18,6 +18,7 @@ const wordRules = ref([
 ])
 
 const charCount = ref(0)
+const mobileWord = ref('')
 
 const getCharState = (index) => {
   return (wordRules.value[index].char !== '')
@@ -39,11 +40,11 @@ const getSquareColorClasses = (index) => {
       case 2:
         return cntl`bg-green-600`
       default:
-        return cntl`bg-white`
+        return cntl`bg-transparent`
     }
   }
 
-  return cntl`bg-white`
+  return cntl`bg-transparent`
 }
 
 const filterWords = () => {
@@ -78,18 +79,22 @@ const filterWords = () => {
       return word.includes('a')
         && word.includes('i')
         && word.includes('u')
-        && !word.includes('e')
-        && !word.includes('o')
-    } else if (charCount.value < 10) {
-      return checkNo && checkNoPos
-        && word.includes('e')
-        && word.includes('o')
     }
 
     return check
   })
 
   filteredWords.value = filtered
+}
+
+const setWordRules = () => {
+  for (let i = 0; i < mobileWord.value.length; i++) {
+    wordRules.value[i + charCount.value].char =
+      mobileWord.value.charAt(i).toLowerCase()
+  }
+
+  charCount.value += mobileWord.value.length
+  mobileWord.value = ''
 }
 
 const clearWordRules = () => {
@@ -103,6 +108,11 @@ const clearWordRules = () => {
 
   charCount.value = 0
   filterWords()
+}
+
+const isMobile = () => {
+  return navigator.userAgent.match(/Android/i)
+    || navigator.userAgent.match(/iPhone/i)
 }
 
 onMounted(() => {
@@ -152,11 +162,18 @@ onMounted(() => {
     <div class="mt-4 flex items-stretch lg:items-start
       flex-col lg:flex-row gap-4">
       <div>
+        <form v-if="isMobile()" @submit.prevent="setWordRules()" class="mb-4">
+          <label for="word-mobile">You're using mobile browser, enter each word below:</label>
+          <input id="word-mobile" type="text" v-model="mobileWord"
+            class="w-full rounded-md
+            uppercase text-lg text-center font-bold">
+        </form>
+
         <form @submit.prevent="filterWords()">
           <div class="grid grid-cols-5 gap-2 max-w-md">
             <div v-for="n in 25" :key="n" class="relative mx-auto">
               <input :id="`char-${n}`" v-model="wordRules[n - 1].char"
-                type="text" maxlength="1"
+                type="text" maxlength="1" :disabled="isMobile()"
                 :class="['word-char w-full rounded-md',
                 'uppercase text-lg text-center font-bold text-white',
                 getSquareColorClasses(n - 1)]">
@@ -167,16 +184,18 @@ onMounted(() => {
             </div>
           </div>
 
-          <AButton type="button" color="red"
-            @click="clearWordRules()"
-            class="mt-4 w-full">
-            Clear
-          </AButton>
+          <div class="mt-4 flex">
+            <AButton type="button" color="red"
+              @click="clearWordRules()"
+              class="w-full">
+              Clear
+            </AButton>
 
-          <AButton type="submit" color="green"
-            class="mt-2 w-full">
-            Find
-          </AButton>
+            <AButton type="submit" color="green"
+              class="ml-2 w-full">
+              Find
+            </AButton>
+          </div>
         </form>
       </div>
 
